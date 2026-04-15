@@ -13,38 +13,41 @@ import HostQuestionsRoute from "@/routes/host/HostQuestionsRoute";
 import HomeRoute from "@/routes/HomeRoute";
 import { HostGuard } from "@/components/HostGuard";
 
-const router = createBrowserRouter([
-  { path: "/", element: <HomeRoute /> },
-  // 若要切回原版：element: <InviteRoute />
-  { path: "/invite/:roomId", element: <MichaelLilyInviteRoute /> },
-  { path: "/game/:roomId", element: <GameRoute /> },
-  { path: "/host/login", element: <HostLoginRoute /> },
-  {
-    path: "/host/rooms",
-    element: (
-      <HostGuard>
-        <HostRoomsRoute />
-      </HostGuard>
-    ),
-  },
-  {
-    path: "/host/rooms/:roomId/edit",
-    element: (
-      <HostGuard>
-        <HostQuestionsRoute />
-      </HostGuard>
-    ),
-  },
-  {
-    path: "/host/rooms/:roomId/control",
-    element: (
-      <HostGuard>
-        <HostControlRoute />
-      </HostGuard>
-    ),
-  },
-  { path: "*", element: <Navigate to="/" replace /> },
-]);
+const router = createBrowserRouter(
+  [
+    { path: "/", element: <HomeRoute /> },
+    // 若要切回原版：element: <InviteRoute />
+    { path: "/invite/:roomId", element: <MichaelLilyInviteRoute /> },
+    { path: "/game/:roomId", element: <GameRoute /> },
+    { path: "/host/login", element: <HostLoginRoute /> },
+    {
+      path: "/host/rooms",
+      element: (
+        <HostGuard>
+          <HostRoomsRoute />
+        </HostGuard>
+      ),
+    },
+    {
+      path: "/host/rooms/:roomId/edit",
+      element: (
+        <HostGuard>
+          <HostQuestionsRoute />
+        </HostGuard>
+      ),
+    },
+    {
+      path: "/host/rooms/:roomId/control",
+      element: (
+        <HostGuard>
+          <HostControlRoute />
+        </HostGuard>
+      ),
+    },
+    { path: "*", element: <Navigate to="/" replace /> },
+  ],
+  { basename: import.meta.env.BASE_URL }
+);
 
 export default function App() {
   return <RouterProvider router={router} />;
