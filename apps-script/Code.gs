@@ -390,6 +390,8 @@ function upsertQuestion_(body) {
   var idxType = header.indexOf('type');
   var idxText = header.indexOf('text');
   var idxImageKey = header.indexOf('imageKey');
+  var idxYesImageKey = header.indexOf('yesImageKey');
+  var idxNoImageKey = header.indexOf('noImageKey');
   var idxOptions = header.indexOf('optionsJson');
   var idxCorrect = header.indexOf('correctAnswer');
 
@@ -401,6 +403,12 @@ function upsertQuestion_(body) {
         sheet.getRange(i + 1, idxType + 1).setValue(body.type);
         sheet.getRange(i + 1, idxText + 1).setValue(body.text);
         sheet.getRange(i + 1, idxImageKey + 1).setValue(body.imageKey || '');
+        if (idxYesImageKey >= 0) {
+          sheet.getRange(i + 1, idxYesImageKey + 1).setValue(body.yesImageKey || '');
+        }
+        if (idxNoImageKey >= 0) {
+          sheet.getRange(i + 1, idxNoImageKey + 1).setValue(body.noImageKey || '');
+        }
         sheet.getRange(i + 1, idxOptions + 1).setValue(body.optionsJson || '');
         sheet.getRange(i + 1, idxCorrect + 1).setValue(body.correctAnswer || '');
         return { questionId: questionId };
@@ -417,6 +425,8 @@ function upsertQuestion_(body) {
   newRow[idxType] = body.type;
   newRow[idxText] = body.text;
   newRow[idxImageKey] = body.imageKey || '';
+  if (idxYesImageKey >= 0) newRow[idxYesImageKey] = body.yesImageKey || '';
+  if (idxNoImageKey >= 0) newRow[idxNoImageKey] = body.noImageKey || '';
   newRow[idxOptions] = body.optionsJson || '';
   newRow[idxCorrect] = body.correctAnswer || '';
   sheet.appendRow(newRow);

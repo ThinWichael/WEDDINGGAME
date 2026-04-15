@@ -1,8 +1,11 @@
-const modules = import.meta.glob("/src/assets/questions/*.{png,jpg,jpeg,gif,webp}", {
-  eager: true,
-  query: "?url",
-  import: "default",
-}) as Record<string, string>;
+const modules = import.meta.glob(
+  "/src/assets/questions/*.{png,jpg,jpeg,gif,webp,svg,avif}",
+  {
+    eager: true,
+    query: "?url",
+    import: "default",
+  }
+) as Record<string, string>;
 
 export interface QuestionImageEntry {
   key: string;

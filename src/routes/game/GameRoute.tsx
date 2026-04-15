@@ -10,6 +10,7 @@ import { AnimatedNumber } from "@/components/AnimatedNumber";
 import { VoteStamp } from "@/components/VoteStamp";
 import { fetchQuestions, joinGame, submitAnswer } from "@/lib/api";
 import { useGameState, useLiveCount } from "@/lib/polling";
+import { resolveQuestionImage } from "@/lib/questionImages";
 import {
   clearGamePlayerSession,
   getGamePlayerSession,
@@ -17,6 +18,8 @@ import {
   type GamePlayerSession,
 } from "@/lib/storage";
 import type { Question } from "@/lib/types";
+import logoImg from "@/assets/couples/michael-lily/logo.webp";
+import xiSymbol from "@/assets/couples/michael-lily/xi-symbol.webp";
 
 export default function GameRoute() {
   const { roomId } = useParams<{ roomId: string }>();
@@ -93,44 +96,46 @@ function NicknameGate({
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6">
-      <div className="w-full max-w-sm space-y-5">
-        <div className="text-center space-y-1">
-          <h1 className="text-2xl font-semibold">加入遊戲</h1>
-          <p className="text-sm text-muted-foreground">
-            輸入一個暱稱就可以開始玩囉
-          </p>
-        </div>
-
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            attemptJoin(false);
-          }}
-          className="space-y-5 border rounded-xl p-6 shadow-sm bg-card"
-        >
-          <div className="space-y-2">
-            <Label htmlFor="nickname">暱稱</Label>
-            <Input
-              id="nickname"
-              required
-              autoFocus
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-              placeholder="輸入顯示名稱"
-              disabled={submitting}
-            />
+    <>
+      <GameLayout>
+        <div className="w-full max-w-sm space-y-5">
+          <div className="text-center space-y-1">
+            <h1 className="text-2xl font-semibold">加入遊戲</h1>
+            <p className="text-sm text-muted-foreground">
+              輸入一個暱稱就可以開始玩囉
+            </p>
           </div>
 
-          {error && (
-            <p className="text-sm text-destructive text-center">{error}</p>
-          )}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              attemptJoin(false);
+            }}
+            className="space-y-5 border rounded-xl p-6 shadow-sm bg-card"
+          >
+            <div className="space-y-2">
+              <Label htmlFor="nickname">暱稱</Label>
+              <Input
+                id="nickname"
+                required
+                autoFocus
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                placeholder="輸入顯示名稱"
+                disabled={submitting}
+              />
+            </div>
 
-          <Button type="submit" className="w-full" disabled={submitting}>
-            {submitting ? "處理中..." : "加入遊戲"}
-          </Button>
-        </form>
-      </div>
+            {error && (
+              <p className="text-sm text-destructive text-center">{error}</p>
+            )}
+
+            <Button type="submit" className="w-full" disabled={submitting}>
+              {submitting ? "處理中..." : "加入遊戲"}
+            </Button>
+          </form>
+        </div>
+      </GameLayout>
 
       {conflictNickname && (
         <div
@@ -171,7 +176,7 @@ function NicknameGate({
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 
@@ -306,7 +311,7 @@ function GamePlaying({
   const noLabel = currentQuestion.options[1]?.trim() || "NO";
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6">
+    <GameLayout>
       <div className="w-full max-w-lg space-y-8">
         <AnimatePresence mode="wait">
           <motion.div
@@ -317,10 +322,10 @@ function GamePlaying({
             transition={{ duration: 0.35 }}
             className="text-center space-y-2"
           >
-            <p className="text-xs text-muted-foreground uppercase tracking-wider">
+            <p className="text-xs text-wedding-gold-soft uppercase tracking-wider">
               第 {currentQuestion.order} 題
             </p>
-            <h1 className="text-2xl font-semibold leading-snug">
+            <h1 className="text-2xl font-semibold leading-snug text-wedding-gold">
               {currentQuestion.text}
             </h1>
           </motion.div>
@@ -333,6 +338,8 @@ function GamePlaying({
             revealed={revealed}
             yesLabel={yesLabel}
             noLabel={noLabel}
+            yesImage={resolveQuestionImage(currentQuestion.yesImageKey)}
+            noImage={resolveQuestionImage(currentQuestion.noImageKey)}
           />
         ) : (
           <VoteBars
@@ -348,7 +355,7 @@ function GamePlaying({
             <Button
               size="lg"
               className={
-                "relative h-14 text-base " +
+                "relative h-14 text-base text-wedding-gold border-wedding-gold-soft/60 hover:bg-wedding-gold-soft/10 hover:text-wedding-gold " +
                 (committedAnswer === "yes" ? "disabled:opacity-100" : "")
               }
               variant="outline"
@@ -361,7 +368,7 @@ function GamePlaying({
             <Button
               size="lg"
               className={
-                "relative h-14 text-base " +
+                "relative h-14 text-base text-wedding-gold border-wedding-gold-soft/60 hover:bg-wedding-gold-soft/10 hover:text-wedding-gold " +
                 (committedAnswer === "no" ? "disabled:opacity-100" : "")
               }
               variant="outline"
@@ -382,7 +389,7 @@ function GamePlaying({
                   key={key}
                   size="lg"
                   className={
-                    "relative h-12 justify-start " +
+                    "relative h-12 justify-start text-wedding-gold border-wedding-gold-soft/60 hover:bg-wedding-gold-soft/10 hover:text-wedding-gold " +
                     (isChosen ? "disabled:opacity-100" : "")
                   }
                   variant="outline"
@@ -403,7 +410,7 @@ function GamePlaying({
           </p>
         )}
         {alreadySubmitted && !alreadyAnsweredNotice && !revealed && (
-          <p className="text-center text-sm text-muted-foreground">
+          <p className="text-center text-sm text-wedding-gold-soft">
             已送出，等待主持人公佈答案...
           </p>
         )}
@@ -414,7 +421,7 @@ function GamePlaying({
             transition={{ delay: 0.2 }}
             className="text-center space-y-1"
           >
-            <p className="text-sm text-muted-foreground">正確答案</p>
+            <p className="text-sm text-wedding-gold-soft">正確答案</p>
             <p className="text-2xl font-bold text-emerald-600">
               {currentQuestion.type === "yn"
                 ? currentQuestion.correctAnswer === "yes"
@@ -431,11 +438,11 @@ function GamePlaying({
           </motion.div>
         )}
 
-        <div className="pt-2">
+        {/* <div className="pt-2">
           <ChangeNicknameLink onClick={onChangeNickname} />
-        </div>
+        </div> */}
       </div>
-    </div>
+    </GameLayout>
   );
 }
 
@@ -451,10 +458,33 @@ function ChangeNicknameLink({ onClick }: { onClick: () => void }) {
   );
 }
 
+function GameLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen flex flex-col items-center px-6 py-8">
+      <img
+        src={logoImg}
+        alt="豪華的婚禮"
+        className="w-56 sm:w-64 md:w-72 shrink-0"
+        fetchPriority="high"
+        decoding="async"
+      />
+      <div className="flex-1 w-full flex items-center justify-center py-6">
+        {children}
+      </div>
+      <img
+        src={xiSymbol}
+        alt="喜喜"
+        className="w-20 sm:w-24 md:w-28 shrink-0 opacity-90"
+        decoding="async"
+      />
+    </div>
+  );
+}
+
 function CenterBox({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-      {children}
-    </div>
+    <GameLayout>
+      <div className="text-center">{children}</div>
+    </GameLayout>
   );
 }

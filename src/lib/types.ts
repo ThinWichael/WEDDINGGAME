@@ -16,6 +16,8 @@ export interface Question {
   type: QuestionType;
   text: string;
   imageKey: string;
+  yesImageKey: string;
+  noImageKey: string;
   options: string[];
   correctAnswer: string;
 }

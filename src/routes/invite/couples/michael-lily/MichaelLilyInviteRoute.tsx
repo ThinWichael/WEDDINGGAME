@@ -468,18 +468,18 @@ export default function MichaelLilyInviteRoute() {
                 </div>
 
                 <div>
-                  <label className={styles.label}>Email（強烈建議填寫）</label>
+                  <label className={styles.label}>Email</label>
                   <input
                     type="email"
                     className={styles.input}
                     value={form.email}
                     onChange={(e) => handleChange("email", e.target.value)}
-                    placeholder="換裝置時用這個登入回來"
+                    placeholder=""
                     disabled={submitting}
                   />
-                  <p className={styles.hint}>
+                  {/* <p className={styles.hint}>
                     如果換手機或清除瀏覽器資料，有 email 才能找回原本的身份
-                  </p>
+                  </p> */}
                 </div>
 
                 <div>

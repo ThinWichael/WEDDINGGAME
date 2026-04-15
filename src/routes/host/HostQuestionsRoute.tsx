@@ -19,6 +19,8 @@ interface DraftQuestion {
   type: QuestionType;
   text: string;
   imageKey: string;
+  yesImageKey: string;
+  noImageKey: string;
   options: string[];
   correctAnswer: string;
 }
@@ -28,6 +30,8 @@ const emptyDraft = (order: number): DraftQuestion => ({
   type: "yn",
   text: "",
   imageKey: "",
+  yesImageKey: "",
+  noImageKey: "",
   options: ["", "", "", ""],
   correctAnswer: "yes",
 });
@@ -38,6 +42,8 @@ const toDraft = (q: Question): DraftQuestion => ({
   type: q.type,
   text: q.text,
   imageKey: q.imageKey,
+  yesImageKey: q.yesImageKey,
+  noImageKey: q.noImageKey,
   options: [0, 1, 2, 3].map((i) => q.options[i] ?? ""),
   correctAnswer: q.correctAnswer,
 });
@@ -105,6 +111,8 @@ export default function HostQuestionsRoute() {
           type: d.type,
           text: d.text.trim(),
           imageKey: d.imageKey,
+          yesImageKey: d.type === "yn" ? d.yesImageKey : "",
+          noImageKey: d.type === "yn" ? d.noImageKey : "",
           options: cleanedOptions,
           correctAnswer: d.correctAnswer,
         },
@@ -195,6 +203,62 @@ interface QuestionEditorProps {
   onRemove: () => void;
 }
 
+function ImagePreview({ src, alt }: { src: string; alt: string }) {
+  const [errored, setErrored] = useState(false);
+  if (errored) {
+    return (
+      <p className="text-xs text-muted-foreground">預覽載入失敗：{alt}</p>
+    );
+  }
+  return (
+    <img
+      src={src}
+      alt={alt}
+      onError={() => setErrored(true)}
+      className="rounded-md max-h-40 border"
+    />
+  );
+}
+
+function ImagePickerField({
+  label,
+  value,
+  images,
+  onChange,
+  placeholder = "（無圖片）",
+}: {
+  label: string;
+  value: string;
+  images: { key: string; url: string }[];
+  onChange: (key: string) => void;
+  placeholder?: string;
+}) {
+  const url = resolveQuestionImage(value);
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <select
+        className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      >
+        <option value="">{placeholder}</option>
+        {images.map((img) => (
+          <option key={img.key} value={img.key}>
+            {img.key}
+          </option>
+        ))}
+      </select>
+      {url && <ImagePreview src={url} alt={value} />}
+      {!url && value && (
+        <p className="text-xs text-destructive">
+          找不到圖片：{value}（請放到 src/assets/questions/）
+        </p>
+      )}
+    </div>
+  );
+}
+
 function QuestionEditor({
   index,
   draft,
@@ -205,7 +269,6 @@ function QuestionEditor({
   onSave,
   onRemove,
 }: QuestionEditorProps) {
-  const imageUrl = resolveQuestionImage(draft.imageKey);
   return (
     <div className="border rounded-xl p-5 bg-card space-y-4">
       <div className="flex items-center justify-between">
@@ -261,33 +324,12 @@ function QuestionEditor({
         />
       </div>
 
-      <div className="space-y-2">
-        <Label>題目圖片（選填）</Label>
-        <select
-          className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
-          value={draft.imageKey}
-          onChange={(e) => onChange({ imageKey: e.target.value })}
-        >
-          <option value="">（無圖片）</option>
-          {images.map((img) => (
-            <option key={img.key} value={img.key}>
-              {img.key}
-            </option>
-          ))}
-        </select>
-        {imageUrl && (
-          <img
-            src={imageUrl}
-            alt={draft.imageKey}
-            className="rounded-md max-h-40 border"
-          />
-        )}
-        {!imageUrl && draft.imageKey && (
-          <p className="text-xs text-destructive">
-            找不到圖片：{draft.imageKey}（請放到 src/assets/questions/）
-          </p>
-        )}
-      </div>
+      <ImagePickerField
+        label="題目圖片（選填）"
+        value={draft.imageKey}
+        images={images}
+        onChange={(key) => onChange({ imageKey: key })}
+      />
 
       {draft.type === "yn" ? (
         <div className="space-y-4">
@@ -317,6 +359,24 @@ function QuestionEditor({
               例如改成「新郎 / 新娘」、「小貓 / 小狗」；賓客看到的按鈕跟天平標籤會跟著換
             </p>
           </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <ImagePickerField
+              label="YES 選項圖片（選填）"
+              value={draft.yesImageKey}
+              images={images}
+              onChange={(key) => onChange({ yesImageKey: key })}
+            />
+            <ImagePickerField
+              label="NO 選項圖片（選填）"
+              value={draft.noImageKey}
+              images={images}
+              onChange={(key) => onChange({ noImageKey: key })}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground -mt-2">
+            遊戲畫面中會顯示在天平能量條的左右兩端
+          </p>
 
           <div className="space-y-2">
             <Label>正確答案</Label>

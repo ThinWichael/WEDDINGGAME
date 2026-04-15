@@ -138,6 +138,8 @@ interface QuestionRow {
   type: string;
   text: string;
   imageKey: string;
+  yesImageKey: string;
+  noImageKey: string;
   optionsJson: string;
   correctAnswer: string;
   [key: string]: unknown;
@@ -155,6 +157,8 @@ export async function fetchQuestions(roomId: string): Promise<Question[]> {
     type: (String(r.type) || "yn") as Question["type"],
     text: String(r.text),
     imageKey: String(r.imageKey ?? ""),
+    yesImageKey: String(r.yesImageKey ?? ""),
+    noImageKey: String(r.noImageKey ?? ""),
     options: r.optionsJson ? safeJsonParse<string[]>(String(r.optionsJson), []) : [],
     correctAnswer: String(r.correctAnswer ?? ""),
   }));
@@ -223,6 +227,8 @@ export interface UpsertQuestionInput {
   type: QuestionType;
   text: string;
   imageKey: string;
+  yesImageKey: string;
+  noImageKey: string;
   options: string[];
   correctAnswer: string;
 }
@@ -238,6 +244,8 @@ export async function upsertQuestion(
     type: input.type,
     text: input.text,
     imageKey: input.imageKey,
+    yesImageKey: input.yesImageKey,
+    noImageKey: input.noImageKey,
     optionsJson: JSON.stringify(input.options),
     correctAnswer: input.correctAnswer,
   };

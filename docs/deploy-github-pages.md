@@ -3,6 +3,12 @@
 本專案目前設定為部署到 GitHub Pages 的 **子路徑模式**：
 `https://thinwichael.github.io/WEDDINGGAME/`
 
+檢查部署設定
+https://github.com/ThinWichael/WEDDINGGAME/settings
+
+檢查最新部署
+https://github.com/ThinWichael/WEDDINGGAME/actions
+
 ## 先決條件
 
 - **Repo 必須是 public**。GitHub Pages 免費方案不支援 private repo（private 需要 GitHub Pro）。

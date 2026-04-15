@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +13,11 @@ import {
 import { getHostPassword } from "@/lib/storage";
 import type { Room, RoomStatus } from "@/lib/types";
 
+interface QrModalState {
+  title: string;
+  url: string;
+}
+
 const STATUSES: RoomStatus[] = ["draft", "waiting", "playing", "ended"];
 
 export default function HostRoomsRoute() {
@@ -21,6 +27,8 @@ export default function HostRoomsRoute() {
   const [error, setError] = useState<string | null>(null);
   const [newName, setNewName] = useState("");
   const [busy, setBusy] = useState(false);
+  const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null);
+  const [qrModal, setQrModal] = useState<QrModalState | null>(null);
 
   const hostPassword = getHostPassword() ?? "";
 
@@ -56,14 +64,25 @@ export default function HostRoomsRoute() {
   }
 
   async function handleStatusChange(room: Room, status: RoomStatus) {
-    setBusy(true);
+    if (status === room.status) return;
+    const previousStatus = room.status;
+    // Optimistic update: reflect the new status immediately in the UI,
+    // then roll back if the server call fails.
+    setRooms((prev) =>
+      prev.map((r) => (r.roomId === room.roomId ? { ...r, status } : r))
+    );
+    setStatusUpdatingId(room.roomId);
     try {
       await updateRoom({ roomId: room.roomId, status }, hostPassword);
-      await reload();
     } catch (e) {
+      setRooms((prev) =>
+        prev.map((r) =>
+          r.roomId === room.roomId ? { ...r, status: previousStatus } : r
+        )
+      );
       alert("更新失敗：" + (e instanceof Error ? e.message : String(e)));
     } finally {
-      setBusy(false);
+      setStatusUpdatingId((id) => (id === room.roomId ? null : id));
     }
   }
 
@@ -81,11 +100,20 @@ export default function HostRoomsRoute() {
     }
   }
 
-  async function handleCopyInviteUrl(room: Room) {
-    const url = `${window.location.origin}/invite/${room.roomId}`;
+  const baseOrigin = `${window.location.origin}${import.meta.env.BASE_URL}`;
+
+  function inviteUrl(room: Room) {
+    return `${baseOrigin}invite/${room.roomId}`;
+  }
+
+  function gameUrl(room: Room) {
+    return `${baseOrigin}game/${room.roomId}`;
+  }
+
+  async function copyToClipboard(label: string, url: string) {
     try {
       await navigator.clipboard.writeText(url);
-      alert("已複製邀請連結：\n" + url);
+      alert(`已複製${label}：\n${url}`);
     } catch {
       prompt("複製失敗，請手動複製：", url);
     }
@@ -155,6 +183,44 @@ export default function HostRoomsRoute() {
         </p>
       )}
 
+      {qrModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          onClick={() => setQrModal(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl bg-card p-6 shadow-2xl border space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <h2 className="text-lg font-semibold">{qrModal.title}</h2>
+              <button
+                type="button"
+                onClick={() => setQrModal(null)}
+                className="text-2xl leading-none text-muted-foreground hover:text-foreground"
+                aria-label="關閉"
+              >
+                ×
+              </button>
+            </div>
+            <div className="flex justify-center bg-white p-4 rounded-lg">
+              <QRCodeSVG
+                value={qrModal.url}
+                size={320}
+                level="M"
+                marginSize={2}
+              />
+            </div>
+            <p className="text-xs font-mono text-center text-muted-foreground break-all">
+              {qrModal.url}
+            </p>
+            <p className="text-[11px] text-center text-muted-foreground">
+              用手機相機或掃碼 App 對準即可開啟
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-3">
         {rooms.map((room) => (
           <div
@@ -168,33 +234,91 @@ export default function HostRoomsRoute() {
                   {room.roomId}
                 </p>
               </div>
-              <select
-                className="text-sm border rounded-md px-2 py-1 bg-background"
-                value={room.status}
-                disabled={busy}
-                onChange={(e) =>
-                  handleStatusChange(room, e.target.value as RoomStatus)
-                }
-              >
-                {STATUSES.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
+              <div className="flex items-center gap-2">
+                {statusUpdatingId === room.roomId && (
+                  <span className="text-xs text-muted-foreground animate-pulse">
+                    儲存中…
+                  </span>
+                )}
+                <select
+                  className="text-sm border rounded-md px-2 py-1 bg-background disabled:opacity-60"
+                  value={room.status}
+                  disabled={statusUpdatingId === room.roomId}
+                  onChange={(e) =>
+                    handleStatusChange(room, e.target.value as RoomStatus)
+                  }
+                >
+                  {STATUSES.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <div className="rounded-md bg-muted p-2 flex items-center gap-2">
-              <code className="text-xs font-mono flex-1 truncate">
-                {`${window.location.origin}/invite/${room.roomId}`}
-              </code>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => handleCopyInviteUrl(room)}
-              >
-                複製邀請連結
-              </Button>
+            <div className="space-y-2">
+              <div className="rounded-md bg-muted p-2 space-y-1">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  邀請連結（RSVP 問卷）
+                </p>
+                <div className="flex items-center gap-2">
+                  <code className="text-xs font-mono flex-1 truncate">
+                    {inviteUrl(room)}
+                  </code>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => copyToClipboard("邀請連結", inviteUrl(room))}
+                  >
+                    複製
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setQrModal({
+                        title: `${room.name}・邀請連結`,
+                        url: inviteUrl(room),
+                      })
+                    }
+                  >
+                    QR
+                  </Button>
+                </div>
+              </div>
+              <div className="rounded-md bg-muted p-2 space-y-1">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  遊戲連結（賓客遊玩）
+                </p>
+                <div className="flex items-center gap-2">
+                  <code className="text-xs font-mono flex-1 truncate">
+                    {gameUrl(room)}
+                  </code>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => copyToClipboard("遊戲連結", gameUrl(room))}
+                  >
+                    複製
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setQrModal({
+                        title: `${room.name}・遊戲連結`,
+                        url: gameUrl(room),
+                      })
+                    }
+                  >
+                    QR
+                  </Button>
+                </div>
+              </div>
             </div>
             <div className="flex flex-wrap gap-2 text-sm">
               <Link

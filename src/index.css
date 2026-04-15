@@ -55,6 +55,12 @@
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
+
+  /* 婚禮主題金色系（對應 logo 的金咖啡色）
+   * 之後想統一調整遊戲畫面主色，只要改這兩個變數即可。 */
+  --color-wedding-gold: #b8944f;
+  --color-wedding-gold-soft: #c9a96e;
+
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);

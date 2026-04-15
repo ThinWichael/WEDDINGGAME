@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 
 interface BalanceBarProps {
@@ -6,6 +7,25 @@ interface BalanceBarProps {
   revealed: boolean;
   yesLabel?: string;
   noLabel?: string;
+  yesImage?: string | null;
+  noImage?: string | null;
+}
+
+function OptionImage({ src }: { src: string | null | undefined }) {
+  const [errored, setErrored] = useState(false);
+  // Reset error state if the src URL itself changes (e.g. next question).
+  useEffect(() => {
+    setErrored(false);
+  }, [src]);
+  if (!src || errored) return null;
+  return (
+    <img
+      src={src}
+      alt=""
+      onError={() => setErrored(true)}
+      className="w-14 h-14 md:w-16 md:h-16 object-contain shrink-0"
+    />
+  );
 }
 
 /**
@@ -18,6 +38,8 @@ export function BalanceBar({
   revealed,
   yesLabel = "YES",
   noLabel = "NO",
+  yesImage,
+  noImage,
 }: BalanceBarProps) {
   const total = yesCount + noCount;
   // -1 = 全都投 NO，+1 = 全都投 YES，0 = 均勢
@@ -33,42 +55,48 @@ export function BalanceBar({
         <span className="text-rose-600">{noLabel}</span>
       </div>
 
-      <div className="relative h-16">
-        {/* 底部 bar */}
-        <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-2 rounded-full bg-gradient-to-r from-emerald-200 via-muted to-rose-200" />
+      <div className="flex items-center gap-3 h-16">
+        <OptionImage src={yesImage} />
 
-        {/* 中線（起始基準） */}
-        <div className="absolute top-1/2 -translate-y-1/2 left-1/2 w-px h-6 bg-muted-foreground/30" />
+        <div className="relative h-16 flex-1">
+          {/* 底部 bar */}
+          <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-2 rounded-full bg-gradient-to-r from-emerald-200 via-wedding-gold-soft/20 to-rose-200" />
 
-        {/* 支點球 */}
-        <motion.div
-          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2"
-          initial={{ left: "50%" }}
-          animate={{ left: `${pivotPercent}%` }}
-          transition={{
-            type: "spring",
-            stiffness: 120,
-            damping: 8,
-            mass: 1.2,
-          }}
-        >
-          <div className="relative">
-            <div className="w-10 h-10 rounded-full bg-primary shadow-lg ring-4 ring-primary/20" />
-            {revealed && (
-              <motion.div
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.4, type: "spring", stiffness: 200 }}
-                className="absolute -top-8 left-1/2 -translate-x-1/2 text-xs font-mono whitespace-nowrap bg-foreground text-background px-2 py-0.5 rounded"
-              >
-                {bias >= 0 ? `+${Math.round(bias * 100)}%` : `${Math.round(bias * 100)}%`}
-              </motion.div>
-            )}
-          </div>
-        </motion.div>
+          {/* 中線（起始基準） */}
+          <div className="absolute top-1/2 -translate-y-1/2 left-1/2 w-px h-6 bg-wedding-gold-soft/50" />
+
+          {/* 支點球 */}
+          <motion.div
+            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2"
+            initial={{ left: "50%" }}
+            animate={{ left: `${pivotPercent}%` }}
+            transition={{
+              type: "spring",
+              stiffness: 120,
+              damping: 8,
+              mass: 1.2,
+            }}
+          >
+            <div className="relative">
+              <div className="w-10 h-10 rounded-full bg-wedding-gold shadow-lg ring-4 ring-wedding-gold/20" />
+              {revealed && (
+                <motion.div
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.4, type: "spring", stiffness: 200 }}
+                  className="absolute -top-8 left-1/2 -translate-x-1/2 text-xs font-mono whitespace-nowrap bg-wedding-gold text-white px-2 py-0.5 rounded"
+                >
+                  {bias >= 0 ? `+${Math.round(bias * 100)}%` : `${Math.round(bias * 100)}%`}
+                </motion.div>
+              )}
+            </div>
+          </motion.div>
+        </div>
+
+        <OptionImage src={noImage} />
       </div>
 
-      <div className="flex justify-between text-xs text-muted-foreground mt-2 font-mono">
+      <div className="flex justify-between text-xs text-wedding-gold-soft mt-2 font-mono">
         <span>{revealed ? `${yesCount} 票` : "—"}</span>
         <span>{revealed ? `${noCount} 票` : "—"}</span>
       </div>

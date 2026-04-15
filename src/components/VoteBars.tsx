@@ -33,13 +33,13 @@ export function VoteBars({
                 className={
                   isCorrect
                     ? "font-semibold text-emerald-600"
-                    : "text-foreground"
+                    : "text-wedding-gold"
                 }
               >
                 {key}. {label}
                 {isCorrect && " ✓"}
               </span>
-              <span className="font-mono text-xs text-muted-foreground">
+              <span className="font-mono text-xs text-wedding-gold-soft">
                 {revealed ? (
                   <>
                     <AnimatedNumber value={c} /> 票
@@ -49,12 +49,12 @@ export function VoteBars({
                 )}
               </span>
             </div>
-            <div className="relative h-3 rounded-full bg-muted overflow-hidden">
+            <div className="relative h-3 rounded-full bg-wedding-gold-soft/15 overflow-hidden">
               <motion.div
                 className={
                   isCorrect
                     ? "absolute inset-y-0 left-0 bg-emerald-500"
-                    : "absolute inset-y-0 left-0 bg-primary/70"
+                    : "absolute inset-y-0 left-0 bg-wedding-gold-soft"
                 }
                 initial={{ width: 0 }}
                 animate={{ width: `${pct}%` }}
