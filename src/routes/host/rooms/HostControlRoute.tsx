@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { VoterLists } from "@/components/VoterLists";
 import { advanceState, fetchQuestions } from "@/lib/api";
-import { useGameState, useLiveCount } from "@/lib/polling";
+import { useGameState, useLiveCount, useVoterLists } from "@/lib/polling";
 import { getHostPassword } from "@/lib/storage";
 import type { Question } from "@/lib/types";
+import { isVerdictQuestion, resolveWinner } from "@/lib/verdict";
 
 export default function HostControlRoute() {
   const { roomId } = useParams<{ roomId: string }>();
@@ -30,6 +32,11 @@ export default function HostControlRoute() {
     roomId,
     currentQuestion?.questionId,
     !!currentQuestion
+  );
+  const { voters } = useVoterLists(
+    roomId,
+    currentQuestion?.questionId,
+    state?.phase === "revealed"
   );
 
   async function doAdvance(
@@ -81,16 +88,46 @@ export default function HostControlRoute() {
         (() => {
           const yesLabel = currentQuestion.options[0]?.trim() || "YES";
           const noLabel = currentQuestion.options[1]?.trim() || "NO";
-          const correctDisplay =
+          const verdict = isVerdictQuestion(currentQuestion.correctAnswer);
+          const liveCounts = count
+            ? [
+                count.optionACount,
+                count.optionBCount,
+                count.optionCCount,
+                count.optionDCount,
+              ]
+            : [0, 0, 0, 0];
+          const effectiveWinner = resolveWinner(
+            currentQuestion.correctAnswer,
             currentQuestion.type === "yn"
-              ? currentQuestion.correctAnswer === "yes"
+              ? { yes: count?.yesCount ?? 0, no: count?.noCount ?? 0 }
+              : {
+                  A: liveCounts[0],
+                  B: liveCounts[1],
+                  C: liveCounts[2],
+                  D: liveCounts[3],
+                }
+          );
+          const winnerLabel =
+            currentQuestion.type === "yn"
+              ? effectiveWinner === "yes"
                 ? yesLabel
-                : noLabel
-              : currentQuestion.correctAnswer;
+                : effectiveWinner === "no"
+                  ? noLabel
+                  : ""
+              : effectiveWinner
+                ? `${effectiveWinner}. ${currentQuestion.options[effectiveWinner.charCodeAt(0) - 65] ?? ""}`
+                : "";
+          const statusLine = verdict
+            ? effectiveWinner
+              ? `裁決題 → ${winnerLabel}`
+              : "裁決題（目前平手）"
+            : `正確答案：${winnerLabel}`;
           return (
             <div className="border rounded-xl p-5 bg-card space-y-3">
               <p className="text-xs text-muted-foreground uppercase">
-                第 {currentQuestion.order} 題 ({currentQuestion.type})
+                第 {currentQuestion.order} 題 ({currentQuestion.type}
+                {verdict && " · 裁決"})
               </p>
               <p className="text-lg font-medium">{currentQuestion.text}</p>
               {currentQuestion.type === "yn" ? (
@@ -102,25 +139,34 @@ export default function HostControlRoute() {
                 <ul className="text-sm space-y-1">
                   {currentQuestion.options.map((o, i) => {
                     const key = String.fromCharCode(65 + i);
-                    const counts = count
-                      ? [
-                          count.optionACount,
-                          count.optionBCount,
-                          count.optionCCount,
-                          count.optionDCount,
-                        ]
-                      : [0, 0, 0, 0];
                     return (
                       <li key={key}>
-                        {key}. {o} — {counts[i] ?? 0} 票
+                        {key}. {o} — {liveCounts[i] ?? 0} 票
                       </li>
                     );
                   })}
                 </ul>
               )}
-              <p className="text-xs text-muted-foreground">
-                正確答案：{correctDisplay}
-              </p>
+              <p className="text-xs text-muted-foreground">{statusLine}</p>
+              {state?.phase === "revealed" && voters && (
+                <VoterLists
+                  type={currentQuestion.type}
+                  options={
+                    currentQuestion.type === "yn"
+                      ? [yesLabel, noLabel]
+                      : currentQuestion.options
+                  }
+                  correctAnswer={effectiveWinner}
+                  yesVoters={voters.yesVoters}
+                  noVoters={voters.noVoters}
+                  optionVoters={[
+                    voters.optionAVoters,
+                    voters.optionBVoters,
+                    voters.optionCVoters,
+                    voters.optionDVoters,
+                  ]}
+                />
+              )}
             </div>
           );
         })()

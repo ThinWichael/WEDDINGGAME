@@ -41,6 +41,17 @@ export interface LiveCount {
   optionDCount: number;
 }
 
+export interface VoterLists {
+  roomId: string;
+  questionId: string;
+  yesVoters: string[];
+  noVoters: string[];
+  optionAVoters: string[];
+  optionBVoters: string[];
+  optionCVoters: string[];
+  optionDVoters: string[];
+}
+
 export interface Guest {
   guestId: string;
   roomId: string;

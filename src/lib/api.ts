@@ -12,6 +12,7 @@ import type {
   RegisterGuestInput,
   Room,
   RoomStatus,
+  VoterLists,
 } from "./types";
 
 interface AppsScriptResponse<T> {
@@ -129,6 +130,75 @@ export async function fetchLiveCount(
     optionCCount: num(r.optionCCount),
     optionDCount: num(r.optionDCount),
   };
+}
+
+interface AnswerRow {
+  gamePlayerId: string;
+  answer: string;
+  answeredAt: string;
+  roomId: string;
+  questionId: string;
+  [key: string]: unknown;
+}
+
+interface GamePlayerRow {
+  gamePlayerId: string;
+  roomId: string;
+  nickname: string;
+  [key: string]: unknown;
+}
+
+export async function fetchVoterLists(
+  roomId: string,
+  questionId: string
+): Promise<VoterLists> {
+  // Fetch all rows for the room-level sheets and filter client-side.
+  // Data volume is small (≤30 players × ~10 questions), and this keeps us
+  // independent of column-letter positions — we use header labels only,
+  // matching how gvizFetch keys its results.
+  const [answerRows, playerRows] = await Promise.all([
+    gvizFetch<AnswerRow>({ sheet: "Answers" }),
+    gvizFetch<GamePlayerRow>({ sheet: "GamePlayers" }),
+  ]);
+
+  const nicknameById = new Map<string, string>();
+  for (const p of playerRows) {
+    if (String(p.roomId) !== roomId) continue;
+    nicknameById.set(String(p.gamePlayerId), String(p.nickname));
+  }
+
+  const result: VoterLists = {
+    roomId,
+    questionId,
+    yesVoters: [],
+    noVoters: [],
+    optionAVoters: [],
+    optionBVoters: [],
+    optionCVoters: [],
+    optionDVoters: [],
+  };
+
+  const sorted = answerRows
+    .filter(
+      (a) =>
+        String(a.roomId) === roomId && String(a.questionId) === questionId
+    )
+    .sort((a, b) =>
+      String(a.answeredAt).localeCompare(String(b.answeredAt))
+    );
+
+  for (const a of sorted) {
+    const nick = nicknameById.get(String(a.gamePlayerId)) ?? "(匿名)";
+    const ans = String(a.answer).toLowerCase();
+    if (ans === "yes") result.yesVoters.push(nick);
+    else if (ans === "no") result.noVoters.push(nick);
+    else if (ans === "a") result.optionAVoters.push(nick);
+    else if (ans === "b") result.optionBVoters.push(nick);
+    else if (ans === "c") result.optionCVoters.push(nick);
+    else if (ans === "d") result.optionDVoters.push(nick);
+  }
+
+  return result;
 }
 
 interface QuestionRow {

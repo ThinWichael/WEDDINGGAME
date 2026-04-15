@@ -6,10 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BalanceBar } from "@/components/BalanceBar";
 import { VoteBars } from "@/components/VoteBars";
+import { VoterLists } from "@/components/VoterLists";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
 import { VoteStamp } from "@/components/VoteStamp";
 import { fetchQuestions, joinGame, submitAnswer } from "@/lib/api";
-import { useGameState, useLiveCount } from "@/lib/polling";
+import { useGameState, useLiveCount, useVoterLists } from "@/lib/polling";
+import { isVerdictQuestion, resolveWinner } from "@/lib/verdict";
 import { resolveQuestionImage } from "@/lib/questionImages";
 import {
   clearGamePlayerSession,
@@ -223,6 +225,11 @@ function GamePlaying({
     currentQuestion?.questionId,
     state?.phase === "answering" || state?.phase === "revealed"
   );
+  const { voters } = useVoterLists(
+    roomId,
+    currentQuestion?.questionId,
+    state?.phase === "revealed"
+  );
 
   useEffect(() => {
     setAlreadyAnsweredNotice(null);
@@ -309,6 +316,28 @@ function GamePlaying({
     : [0, 0, 0, 0];
   const yesLabel = currentQuestion.options[0]?.trim() || "YES";
   const noLabel = currentQuestion.options[1]?.trim() || "NO";
+  const verdict = isVerdictQuestion(currentQuestion.correctAnswer);
+  const effectiveWinner = resolveWinner(
+    currentQuestion.correctAnswer,
+    currentQuestion.type === "yn"
+      ? { yes: yesCount, no: noCount }
+      : {
+          A: optionCounts[0],
+          B: optionCounts[1],
+          C: optionCounts[2],
+          D: optionCounts[3],
+        }
+  );
+  const winnerLabel =
+    currentQuestion.type === "yn"
+      ? effectiveWinner === "yes"
+        ? yesLabel
+        : effectiveWinner === "no"
+          ? noLabel
+          : ""
+      : effectiveWinner
+        ? `${effectiveWinner}. ${currentQuestion.options[effectiveWinner.charCodeAt(0) - 65] ?? ""}`
+        : "";
 
   return (
     <GameLayout>
@@ -325,7 +354,7 @@ function GamePlaying({
             <p className="text-xs text-wedding-gold-soft uppercase tracking-wider">
               第 {currentQuestion.order} 題
             </p>
-            <h1 className="text-2xl font-semibold leading-snug text-wedding-gold">
+            <h1 className="font-serif text-2xl md:text-3xl font-bold tracking-widest leading-snug text-wedding-gold">
               {currentQuestion.text}
             </h1>
           </motion.div>
@@ -345,7 +374,7 @@ function GamePlaying({
           <VoteBars
             options={currentQuestion.options}
             counts={optionCounts}
-            correctKey={currentQuestion.correctAnswer}
+            correctKey={effectiveWinner}
             revealed={revealed}
           />
         )}
@@ -419,16 +448,28 @@ function GamePlaying({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2 }}
-            className="text-center space-y-1"
+            className="text-center space-y-2"
           >
-            <p className="text-sm text-wedding-gold-soft">正確答案</p>
-            <p className="text-2xl font-bold text-emerald-600">
-              {currentQuestion.type === "yn"
-                ? currentQuestion.correctAnswer === "yes"
-                  ? yesLabel
-                  : noLabel
-                : currentQuestion.correctAnswer.toUpperCase()}
+            <p className="text-sm text-wedding-gold-soft">
+              {verdict ? "裁決結果" : "正確答案"}
             </p>
+            {effectiveWinner === "" ? (
+              <p className="text-3xl font-bold text-wedding-gold">平手 🤝</p>
+            ) : (
+              <motion.p
+                initial={{ scale: 0.6, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{
+                  delay: 0.35,
+                  type: "spring",
+                  stiffness: 180,
+                  damping: 10,
+                }}
+                className="text-4xl font-bold text-emerald-600 drop-shadow-sm"
+              >
+                {winnerLabel}
+              </motion.p>
+            )}
             {currentQuestion.type === "yn" && (
               <p className="text-xs text-muted-foreground font-mono">
                 <AnimatedNumber value={yesCount} /> vs{" "}
@@ -436,6 +477,25 @@ function GamePlaying({
               </p>
             )}
           </motion.div>
+        )}
+        {revealed && voters && (
+          <VoterLists
+            type={currentQuestion.type}
+            options={
+              currentQuestion.type === "yn"
+                ? [yesLabel, noLabel]
+                : currentQuestion.options
+            }
+            correctAnswer={effectiveWinner}
+            yesVoters={voters.yesVoters}
+            noVoters={voters.noVoters}
+            optionVoters={[
+              voters.optionAVoters,
+              voters.optionBVoters,
+              voters.optionCVoters,
+              voters.optionDVoters,
+            ]}
+          />
         )}
 
         {/* <div className="pt-2">

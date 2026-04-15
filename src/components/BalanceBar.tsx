@@ -23,7 +23,7 @@ function OptionImage({ src }: { src: string | null | undefined }) {
       src={src}
       alt=""
       onError={() => setErrored(true)}
-      className="w-14 h-14 md:w-16 md:h-16 object-contain shrink-0"
+      className="w-28 h-28 md:w-32 md:h-32 object-contain shrink-0"
     />
   );
 }
@@ -50,17 +50,20 @@ export function BalanceBar({
 
   return (
     <div className="w-full select-none">
-      <div className="flex justify-between text-sm font-semibold mb-2">
-        <span className="text-emerald-600">{yesLabel}</span>
-        <span className="text-rose-600">{noLabel}</span>
-      </div>
-
-      <div className="flex items-center gap-3 h-16">
-        <OptionImage src={yesImage} />
+      <div className="flex items-center gap-3">
+        <div className="flex flex-col items-center gap-1 shrink-0">
+          <span className="text-sm font-semibold text-wedding-gold">
+            {yesLabel}
+          </span>
+          <OptionImage src={yesImage} />
+          <span className="text-xs text-wedding-gold-soft font-mono">
+            {revealed ? `${yesCount} 票` : "—"}
+          </span>
+        </div>
 
         <div className="relative h-16 flex-1">
           {/* 底部 bar */}
-          <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-2 rounded-full bg-gradient-to-r from-emerald-200 via-wedding-gold-soft/20 to-rose-200" />
+          <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-2 rounded-full bg-wedding-gold-soft/25" />
 
           {/* 中線（起始基準） */}
           <div className="absolute top-1/2 -translate-y-1/2 left-1/2 w-px h-6 bg-wedding-gold-soft/50" />
@@ -93,12 +96,15 @@ export function BalanceBar({
           </motion.div>
         </div>
 
-        <OptionImage src={noImage} />
-      </div>
-
-      <div className="flex justify-between text-xs text-wedding-gold-soft mt-2 font-mono">
-        <span>{revealed ? `${yesCount} 票` : "—"}</span>
-        <span>{revealed ? `${noCount} 票` : "—"}</span>
+        <div className="flex flex-col items-center gap-1 shrink-0">
+          <span className="text-sm font-semibold text-wedding-gold">
+            {noLabel}
+          </span>
+          <OptionImage src={noImage} />
+          <span className="text-xs text-wedding-gold-soft font-mono">
+            {revealed ? `${noCount} 票` : "—"}
+          </span>
+        </div>
       </div>
     </div>
   );

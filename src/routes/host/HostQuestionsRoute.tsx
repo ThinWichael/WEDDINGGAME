@@ -379,8 +379,8 @@ function QuestionEditor({
           </p>
 
           <div className="space-y-2">
-            <Label>正確答案</Label>
-            <div className="flex gap-2">
+            <Label>裁決結果</Label>
+            <div className="flex gap-2 flex-wrap">
               <Button
                 type="button"
                 size="sm"
@@ -397,7 +397,18 @@ function QuestionEditor({
               >
                 {draft.options[1]?.trim() || "NO"}
               </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={draft.correctAnswer === "" ? "default" : "outline"}
+                onClick={() => onChange({ correctAnswer: "" })}
+              >
+                裁決題
+              </Button>
             </div>
+            <p className="text-xs text-muted-foreground">
+              選「裁決題」= 不設正確答案，公佈時由現場票數多數決定勝方
+            </p>
           </div>
         </div>
       ) : (
@@ -428,8 +439,18 @@ function QuestionEditor({
               </div>
             );
           })}
+          <div className="pt-1">
+            <Button
+              type="button"
+              size="sm"
+              variant={draft.correctAnswer === "" ? "default" : "outline"}
+              onClick={() => onChange({ correctAnswer: "" })}
+            >
+              裁決題
+            </Button>
+          </div>
           <p className="text-xs text-muted-foreground">
-            綠色按鈕 = 正確答案
+            綠色按鈕 = 正確答案；選「裁決題」= 不設正確答案，公佈時由現場票數多數決定勝方
           </p>
         </div>
       )}

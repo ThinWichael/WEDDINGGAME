@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { fetchGameState, fetchLiveCount } from "./api";
-import type { GameState, LiveCount } from "./types";
+import { fetchGameState, fetchLiveCount, fetchVoterLists } from "./api";
+import type { GameState, LiveCount, VoterLists } from "./types";
 
 const STATE_POLL_MS = 2000;
-const LIVECOUNT_POLL_MS = 1500;
+const LIVECOUNT_POLL_MS = 2000;
+const VOTERLIST_POLL_MS = 3000;
 
 export interface UseGameStateResult {
   state: GameState | null;
@@ -95,4 +96,48 @@ export function useLiveCount(
   }, [roomId, questionId, active, intervalMs]);
 
   return { count, error };
+}
+
+export interface UseVoterListsResult {
+  voters: VoterLists | null;
+  error: string | null;
+}
+
+export function useVoterLists(
+  roomId: string | undefined,
+  questionId: string | undefined,
+  active: boolean,
+  intervalMs: number = VOTERLIST_POLL_MS
+): UseVoterListsResult {
+  const [voters, setVoters] = useState<VoterLists | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!active || !roomId || !questionId) {
+      setVoters(null);
+      return;
+    }
+    let cancelled = false;
+
+    async function tick() {
+      try {
+        const next = await fetchVoterLists(roomId!, questionId!);
+        if (cancelled) return;
+        setVoters(next);
+        setError(null);
+      } catch (e) {
+        if (cancelled) return;
+        setError(e instanceof Error ? e.message : String(e));
+      }
+    }
+
+    tick();
+    const id = window.setInterval(tick, intervalMs);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [roomId, questionId, active, intervalMs]);
+
+  return { voters, error };
 }
