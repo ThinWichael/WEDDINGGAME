@@ -193,7 +193,7 @@ export default function MichaelLilyInviteRoute() {
     <div className="min-h-screen text-[#c9a96e] font-serif">
       <audio
         ref={audioRef}
-        src="/couples/michael-lily/audio/bgm.mp3"
+        src={`${import.meta.env.BASE_URL}couples/michael-lily/audio/bgm.mp3`}
         loop
         preload="auto"
       />
