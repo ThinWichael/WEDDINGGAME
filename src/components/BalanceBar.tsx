@@ -81,7 +81,7 @@ export function BalanceBar({
             }}
           >
             <div className="relative">
-              <div className="w-10 h-10 rounded-full bg-wedding-gold shadow-lg ring-4 ring-wedding-gold/20" />
+              <div className="w-5 h-5 ring-2 sm:w-10 sm:h-10 sm:ring-4 rounded-full bg-wedding-gold shadow-lg ring-wedding-gold/20" />
               {revealed && (
                 <motion.div
                   initial={{ scale: 0, opacity: 0 }}

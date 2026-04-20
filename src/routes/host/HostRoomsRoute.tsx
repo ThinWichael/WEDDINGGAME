@@ -5,13 +5,31 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  advanceState,
   createRoom,
   deleteRoom,
   fetchRooms,
   updateRoom,
 } from "@/lib/api";
 import { getHostPassword } from "@/lib/storage";
-import type { Room, RoomStatus } from "@/lib/types";
+import type { GamePhase, Room, RoomStatus } from "@/lib/types";
+
+// Map Room.status to the live GameState.phase guests see.
+// "playing" intentionally returns null: the control console drives phase
+// (answering/revealed per question), so we must not clobber an in-progress game.
+function statusToPhaseSync(
+  status: RoomStatus
+): { phase: GamePhase; currentQuestionId: string } | null {
+  switch (status) {
+    case "draft":
+    case "waiting":
+      return { phase: "waiting", currentQuestionId: "" };
+    case "ended":
+      return { phase: "ended", currentQuestionId: "" };
+    case "playing":
+      return null;
+  }
+}
 
 interface QrModalState {
   title: string;
@@ -74,6 +92,17 @@ export default function HostRoomsRoute() {
     setStatusUpdatingId(room.roomId);
     try {
       await updateRoom({ roomId: room.roomId, status }, hostPassword);
+      const sync = statusToPhaseSync(status);
+      if (sync) {
+        await advanceState(
+          {
+            roomId: room.roomId,
+            currentQuestionId: sync.currentQuestionId,
+            phase: sync.phase,
+          },
+          hostPassword
+        );
+      }
     } catch (e) {
       setRooms((prev) =>
         prev.map((r) =>

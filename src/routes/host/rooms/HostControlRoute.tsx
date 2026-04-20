@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { VoterLists } from "@/components/VoterLists";
-import { advanceState, fetchQuestions } from "@/lib/api";
+import { advanceState, fetchQuestions, updateRoom } from "@/lib/api";
 import { useGameState, useLiveCount, useVoterLists } from "@/lib/polling";
 import { getHostPassword } from "@/lib/storage";
 import type { Question } from "@/lib/types";
@@ -51,6 +51,26 @@ export default function HostControlRoute() {
         { roomId, currentQuestionId: targetQuestionId, phase },
         password
       );
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function doResetToWaiting() {
+    if (!roomId) return;
+    if (!confirm("確定要重置為等待中嗎？目前題目進度會清空，賓客頁會回到等待畫面。")) {
+      return;
+    }
+    setBusy(true);
+    setErr(null);
+    try {
+      await advanceState(
+        { roomId, currentQuestionId: "", phase: "waiting" },
+        password
+      );
+      await updateRoom({ roomId, status: "waiting" }, password);
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
     } finally {
@@ -232,6 +252,15 @@ export default function HostControlRoute() {
           }
         >
           結束遊戲
+        </Button>
+
+        <Button
+          variant="outline"
+          className="col-span-2"
+          disabled={busy}
+          onClick={doResetToWaiting}
+        >
+          重置為等待中
         </Button>
       </div>
     </div>

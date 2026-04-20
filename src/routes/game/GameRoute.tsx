@@ -22,6 +22,9 @@ import {
 import type { Question } from "@/lib/types";
 import logoImg from "@/assets/couples/michael-lily/logo.webp";
 import xiSymbol from "@/assets/couples/michael-lily/xi-symbol.webp";
+import sunburstImg from "@/assets/couples/michael-lily/watermark-sunburst.webp";
+import waitingHeroImg from "@/assets/questions/wedding-10.png";
+import waitingFooterImg from "@/assets/questions/wedding -09.png";
 
 export default function GameRoute() {
   const { roomId } = useParams<{ roomId: string }>();
@@ -239,18 +242,9 @@ function GamePlaying({
   if (error) return <CenterBox>讀取遊戲狀態失敗：{error}</CenterBox>;
   if (questionsError)
     return <CenterBox>讀取題目失敗：{questionsError}</CenterBox>;
-  if (!state) return <CenterBox>找不到這個 Room。</CenterBox>;
 
-  if (state.phase === "waiting") {
-    return (
-      <CenterBox>
-        <h1 className="text-2xl font-semibold mb-3">敬請期待 ✨</h1>
-        <p className="text-muted-foreground">
-          嗨 {session.nickname}，遊戲即將開始，請稍候。
-        </p>
-        <ChangeNicknameLink onClick={onChangeNickname} />
-      </CenterBox>
-    );
+  if (!state || state.phase === "waiting") {
+    return <WaitingScreen />;
   }
 
   if (state.phase === "ended") {
@@ -518,23 +512,69 @@ function ChangeNicknameLink({ onClick }: { onClick: () => void }) {
   );
 }
 
+function WaitingScreen() {
+  return (
+    <div className="h-[100dvh] flex flex-col overflow-hidden">
+      {/* <img
+        src={logoImg}
+        alt="豪華的婚禮"
+        className="w-40 sm:w-64 md:w-72 shrink-0"
+        fetchPriority="high"
+        decoding="async"
+      /> */}
+      <div className="flex-1 min-h-0 w-full flex items-start justify-center pt-6 sm:pt-12">
+        <div className="w-full flex items-center justify-between px-1 sm:px-6">
+          <img
+            src={sunburstImg}
+            alt=""
+            aria-hidden="true"
+            className="w-20 h-20 shrink-0"
+            decoding="async"
+          />
+          <img
+            src={waitingHeroImg}
+            alt=""
+            className="max-h-[46vh] sm:max-h-[38vh] md:max-h-[45vh] w-auto shrink-0 translate-x-4 sm:translate-x-6"
+            decoding="async"
+          />
+          <img
+            src={sunburstImg}
+            alt=""
+            aria-hidden="true"
+            className="w-20 h-20 shrink-0"
+            decoding="async"
+          />
+        </div>
+      </div>
+      <div className="shrink-0 w-full flex justify-center">
+        <img
+          src={waitingFooterImg}
+          alt=""
+          className="max-w-full max-h-[40vh] w-auto h-auto"
+          decoding="async"
+        />
+      </div>
+    </div>
+  );
+}
+
 function GameLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen flex flex-col items-center px-6 py-8">
+    <div className="min-h-[100dvh] flex flex-col items-center px-6 py-3 sm:py-8">
       <img
         src={logoImg}
         alt="豪華的婚禮"
-        className="w-56 sm:w-64 md:w-72 shrink-0"
+        className="w-40 sm:w-64 md:w-72 shrink-0"
         fetchPriority="high"
         decoding="async"
       />
-      <div className="flex-1 w-full flex items-center justify-center py-6">
+      <div className="flex-1 w-full flex items-center justify-center py-2 sm:py-6">
         {children}
       </div>
       <img
         src={xiSymbol}
         alt="喜喜"
-        className="w-20 sm:w-24 md:w-28 shrink-0 opacity-90"
+        className="w-14 sm:w-24 md:w-28 shrink-0 opacity-90"
         decoding="async"
       />
     </div>
